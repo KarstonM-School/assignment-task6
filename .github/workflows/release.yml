@@ -1,0 +1,66 @@
+name: Test and Build on Release
+
+on:
+  release:
+    types: [created] # runs when you new GitHub Release is created
+  workflow_dispatch: # run it manually
+
+jobs:
+  test:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository # Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js # Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies # Install npm packages
+        run: npm ci
+
+      - name: Run unit tests # Execute tests
+        run: npm test
+
+  build:
+    name: Build and package project
+    needs: test
+    runs-on: ubuntu-latest
+    if: ${{ needs.test.result == 'success' }} # Only run if tests passed
+
+    steps:
+      - name: Checkout repository # Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js # Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies # Install npm packages
+        run: npm ci
+
+      - name: Build (package all files) # creates dist/build.zip
+        run: npm run build
+
+      - name: Upload build artifact to Actions # store build for later jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build
+          path: dist/build.zip
+
+      - name: Upload asset to GitHub Release # attach build to Release
+        if: ${{ github.event_name == 'release' }} # Only when triggered by a Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: dist/build.zip
+          asset_name: build-${{ github.event.release.tag_name }}.zip
+          asset_content_type: application/zip
