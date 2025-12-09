@@ -21,7 +21,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies # Install npm packages
-        run: npm ci
+        run: npm i
 
       - name: Run unit tests # Execute tests
         run: npm test
@@ -43,7 +43,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies # Install npm packages
-        run: npm ci
+        run: npm i
 
       - name: Build (package all files) # creates dist/build.zip
         run: npm run build
